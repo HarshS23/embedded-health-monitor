@@ -1,0 +1,247 @@
+// // #include <Arduino.h>
+
+// // // put function declarations here:
+// // int myFunction(int, int);
+
+// // void setup() {
+// //   // put your setup code here, to run once:
+// //   int result = myFunction(2, 3);
+// // }
+
+// // void loop() {
+// //   // put your main code here, to run repeatedly:
+// // }
+
+// // // put function definitions here:
+// // int myFunction(int x, int y) {
+// //   return x + y;
+// // }
+// #include <Arduino.h>
+// #include <Wire.h>
+// #include "MAX30105.h"
+// #include "heartRate.h"
+
+// MAX30105 particleSensor;
+
+// const byte RATE_SIZE = 4;       // Average over 4 readings
+// byte rates[RATE_SIZE];
+// byte rateSpot = 0;
+// long lastBeat = 0;
+// float beatsPerMinute;
+// int beatAvg;
+
+// void setup() {
+//   delay(1000);           // Wait for USB to initialise
+//   Serial.begin(115200);
+//   while (!Serial);       // Wait for Serial Monitor to connect
+
+//   Serial.println("MAX30102 Heart Rate Monitor");
+//   Serial.println("---------------------------");
+  
+//   Wire.begin(42,41);
+
+//   // Initialize sensor
+//   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
+//     Serial.println("ERROR: MAX30102 not found! Check wiring:");
+//     Serial.println("  SDA -> GPIO 8");
+//     Serial.println("  SCL -> GPIO 9");
+//     while (1); // Stop here if sensor not found
+//   }
+
+//   Serial.println("Sensor found! Place finger on sensor...");
+//   Serial.println();
+
+//   // Configure sensor
+//   particleSensor.setup();
+//   particleSensor.setPulseAmplitudeRed(0x0A);   // Low power red LED
+//   particleSensor.setPulseAmplitudeGreen(0);     // Turn off green LED
+// }
+
+// void loop() {
+//   long irValue = particleSensor.getIR();
+
+//   // Check if finger is on sensor (IR value > 50000 means finger detected)
+//   if (irValue < 50000) {
+//     Serial.println("No finger detected -- place finger on sensor");
+//     delay(1000);
+//     return;
+//   }
+
+//   // Detect heartbeat
+//   if (checkForBeat(irValue) == true) {
+//     long delta = millis() - lastBeat;
+//     lastBeat = millis();
+
+//     beatsPerMinute = 60 / (delta / 1000.0);
+
+//     // Only accept realistic BPM values (20–200)
+//     if (beatsPerMinute < 200 && beatsPerMinute > 20) {
+//       rates[rateSpot++] = (byte)beatsPerMinute;
+//       rateSpot %= RATE_SIZE;
+
+//       // Calculate average BPM
+//       beatAvg = 0;
+//       for (byte x = 0; x < RATE_SIZE; x++) {
+//         beatAvg += rates[x];
+//       }
+//       beatAvg /= RATE_SIZE;
+//     }
+//   }
+
+//   // Print to Serial Monitor
+//   Serial.print("IR Signal: ");
+//   Serial.print(irValue);
+//   Serial.print("  |  BPM: ");
+//   Serial.print(beatsPerMinute, 1);
+//   Serial.print("  |  Avg BPM: ");
+//   Serial.println(beatAvg);
+
+//   delay(20);
+// }
+
+
+#include <Arduino.h>
+#include <Wire.h>
+#include "MAX30105.h"
+#include "heartRate.h"
+#include "spo2_algorithm.h"
+
+MAX30105 particleSensor;
+
+// Heart rate variables
+const byte RATE_SIZE = 4;
+byte rates[RATE_SIZE];
+byte rateSpot = 0;
+long lastBeat = 0;
+float beatsPerMinute;
+int beatAvg;
+
+// SpO2 variables
+#define BUFFER_LENGTH 100
+uint32_t irBuffer[BUFFER_LENGTH];
+uint32_t redBuffer[BUFFER_LENGTH];
+int32_t spo2;
+int8_t validSPO2;
+int32_t heartRate;
+int8_t validHeartRate;
+
+void setup() {
+  delay(1000);
+  Serial.begin(115200);
+  while (!Serial);
+
+  Serial.println("MAX30102 Health Monitor");
+  Serial.println("-----------------------");
+
+  Wire.begin(42, 41);
+
+  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
+    Serial.println("ERROR: MAX30102 not found! Check wiring:");
+    Serial.println("  SDA -> GPIO 42");
+    Serial.println("  SCL -> GPIO 41");
+    while (1);
+  }
+
+  Serial.println("Sensor found! Place finger on sensor...");
+  Serial.println();
+
+  // Configure sensor with higher power for SpO2
+  byte ledBrightness = 60;   // 0=Off to 255=50mA
+  byte sampleAverage = 4;    // 1, 2, 4, 8, 16, 32
+  byte ledMode = 2;          // 1=Red only, 2=Red+IR, 3=Red+IR+Green
+  byte sampleRate = 100;     // 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int pulseWidth = 411;      // 69, 118, 215, 411
+  int adcRange = 4096;       // 2048, 4096, 8192, 16384
+
+  particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange);
+}
+
+void loop() {
+  // --- Step 1: Fill buffer with 100 samples ---
+  Serial.println("Collecting samples, hold finger still...");
+
+  for (byte i = 0; i < BUFFER_LENGTH; i++) {
+    while (particleSensor.available() == false)
+      particleSensor.check();
+
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample();
+  }
+
+  // Check if finger is present
+  if (irBuffer[BUFFER_LENGTH - 1] < 50000) {
+    Serial.println("No finger detected -- place finger on sensor");
+    delay(1000);
+    return;
+  }
+
+  // --- Step 2: Calculate SpO2 and Heart Rate ---
+  maxim_heart_rate_and_oxygen_saturation(
+    irBuffer, BUFFER_LENGTH,
+    redBuffer,
+    &spo2, &validSPO2,
+    &heartRate, &validHeartRate
+  );
+
+  // --- Step 3: Continuously update with last 25 samples ---
+  for (byte i = 25; i < BUFFER_LENGTH; i++) {
+    redBuffer[i - 25] = redBuffer[i];
+    irBuffer[i - 25] = irBuffer[i];
+  }
+
+  for (byte i = 75; i < BUFFER_LENGTH; i++) {
+    while (particleSensor.available() == false)
+      particleSensor.check();
+
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample();
+
+    // Also calculate live BPM using beat detection
+    long irValue = irBuffer[i];
+    if (checkForBeat(irValue)) {
+      long delta = millis() - lastBeat;
+      lastBeat = millis();
+      beatsPerMinute = 60 / (delta / 1000.0);
+
+      if (beatsPerMinute > 20 && beatsPerMinute < 200) {
+        rates[rateSpot++] = (byte)beatsPerMinute;
+        rateSpot %= RATE_SIZE;
+        beatAvg = 0;
+        for (byte x = 0; x < RATE_SIZE; x++)
+          beatAvg += rates[x];
+        beatAvg /= RATE_SIZE;
+      }
+    }
+  }
+
+  // Recalculate
+  maxim_heart_rate_and_oxygen_saturation(
+    irBuffer, BUFFER_LENGTH,
+    redBuffer,
+    &spo2, &validSPO2,
+    &heartRate, &validHeartRate
+  );
+
+  // --- Step 4: Print results ---
+  Serial.println("========================================");
+  Serial.print("Heart Rate : ");
+  if (validHeartRate) {
+    Serial.print(heartRate);
+    Serial.println(" BPM  ✓");
+  } else {
+    Serial.print(beatAvg);
+    Serial.println(" BPM (avg fallback)");
+  }
+
+  Serial.print("SpO2       : ");
+  if (validSPO2) {
+    Serial.print(spo2);
+    Serial.println(" %  ✓");
+  } else {
+    Serial.println("Calculating... keep finger still");
+  }
+  Serial.println("========================================");
+  Serial.println();
+}
