@@ -1,4 +1,4 @@
-#pragma ONCE 
+#pragma once  
 #ifndef _HEART_RATE_
 #define  _HEART_RATE_
 

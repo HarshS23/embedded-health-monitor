@@ -3,8 +3,8 @@
 
 extern MAX30105 ParticleSensor;
 
-// serial stand for data transmission 
-void setup(){
+void InitSensor(){
+
     Serial.begin(115200); // this is baud rate or comunication speed 
     Serial.println("\n INITLIZING  MAX30105 SENSOR \n");
 
@@ -19,14 +19,7 @@ void setup(){
     ParticleSensor.setup(); // this is set to default settings 
     ParticleSensor.setPulseAmplitudeIR(0x0A); // setting IR LED to red 
     ParticleSensor.setPulseAmplitudeGreen(0);
-}
 
-int main(){
-    Serial.println("\nHEALTH MONITOR\n");
-
-    while(1){
-        // call my functions here 
-        setup();
-    }
 
 }
+
