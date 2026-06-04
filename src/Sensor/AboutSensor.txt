@@ -1,0 +1,34 @@
+
+
+
+MAX30102 Module: 
+    Contains two different types of LED's (Red and IR) and a Photodector 
+
+    Maximum Current Consumption	6mA
+    Voltage	3.3-5V 
+    Sample Rate	50Hz – 3200Hz
+    Temperature Range	 -40°C to +85°C
+    Temperature Accuracy	±1˚C
+    ADC Resolution	18 bits
+    IR LED peak wavelength	880nm
+    Red LED peak wavelength	660nm
+
+
+How does the Pulse Oximeter work? 
+    Inside of our blood hemoglobin is responsible for carrying oxygen. 
+    When the light from the pulse oximeter passes through our blood, by measering the changes 
+    in light absorption we can determine how much oxygen is absorbed in your blood. 
+    The sensor contains IR LED and Red LED. Both LED's are used in SpO2 measurments. These two 
+    LED's emit different wavelength, IR LED at 880nm, and Red LED at 660nm. The oxygenated and deoxygensated 
+    blood have different levels of absorption at these wavelengths.
+
+    Oxygenated blood absorbs more IR light while it reflexts more Red light, while the opposite is true for 
+    deoxygensated blood. The reflected light is measured by the Photodector.
+
+    The ration of IR and Red light measured by the Photodector gives us the blood oxygen concentration in the blood 
+
+How does Heart Rate work? 
+    Heart Rate is the ratio of time between two consecutive heart beats. When human blood is circulating in the human body 
+    Then the blood is squeezed in the capliary tissues. The IR sensor can measure the volume of blood moving throught the 
+    capliary tissues. using this we can determine heart beat. 
+    This is called "Photoplethysmogram"

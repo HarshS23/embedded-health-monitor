@@ -1,0 +1,32 @@
+#include <Wire.h>
+#include <MAX30105.h>
+
+extern MAX30105 ParticleSensor;
+
+// serial stand for data transmission 
+void setup(){
+    Serial.begin(115200); // this is baud rate or comunication speed 
+    Serial.println("\n INITLIZING  MAX30105 SENSOR \n");
+
+    // This just checks if the sensor is found or not 
+    if (!ParticleSensor.begin(Wire, I2C_SPEED_FAST)){ // use default I2C Bus, with 400kHz speed 
+        Serial.println("ERROR: SENSOR NOT FOUND, CHECK WIRING\n");
+       while(1);
+    }
+
+    Serial.println("\n SENSOR FOUND\n");
+
+    ParticleSensor.setup(); // this is set to default settings 
+    ParticleSensor.setPulseAmplitudeIR(0x0A); // setting IR LED to red 
+    ParticleSensor.setPulseAmplitudeGreen(0);
+}
+
+int main(){
+    Serial.println("\nHEALTH MONITOR\n");
+
+    while(1){
+        // call my functions here 
+        setup();
+    }
+
+}
