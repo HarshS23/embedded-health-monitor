@@ -16,8 +16,6 @@ unsigned int BPM_AVG = 0;
 void HeartRate(){
     long IRValue = ParticleSensor.getIR();
 
-
-
     if(checkForBeat(IRValue) == true){
 
         // heart beat detected 
