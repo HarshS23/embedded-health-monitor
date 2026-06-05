@@ -5,5 +5,6 @@
 #include <Wire.h>
 #include <MAX30105.h>
 #include "initSensor.cpp"
+#include <heartRate.h>
 
 #endif
