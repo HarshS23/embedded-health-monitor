@@ -4,7 +4,9 @@
 
 #include <Wire.h>
 #include <MAX30105.h>
-#include "initSensor.cpp"
+#include "initSensor.hpp"
 #include <heartRate.h>
+
+void HeartRate();
 
 #endif

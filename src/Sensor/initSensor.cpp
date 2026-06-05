@@ -3,11 +3,11 @@
 
 extern MAX30105 ParticleSensor;
 
-void InitSensor(){
+void StartSensor(){
 
     Serial.begin(115200); // this is baud rate or comunication speed 
     Serial.println("\n INITLIZING  MAX30105 SENSOR \n");
-
+    Wire.begin(42,41);
     // This just checks if the sensor is found or not 
     if (!ParticleSensor.begin(Wire, I2C_SPEED_FAST)){ // use default I2C Bus, with 400kHz speed 
         Serial.println("ERROR: SENSOR NOT FOUND, CHECK WIRING\n");
@@ -20,6 +20,6 @@ void InitSensor(){
     ParticleSensor.setPulseAmplitudeIR(0x0A); // setting IR LED to red 
     ParticleSensor.setPulseAmplitudeGreen(0);
 
-
+    
 }
 

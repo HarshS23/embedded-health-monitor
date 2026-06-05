@@ -1,19 +1,19 @@
 #include "HeartRate.hpp"
+#include "initSensor.hpp"
 // Global Declaration of this Particle Sensor 
 // MAX30105 ParticleSensor;
 
 // ---------------------------------------------------------
-const  unsigned int Average_Count = 4;
-unsigned int Heartbeat_Array[Average_Count];
-unsigned int FirstBeat; 
-unsigned int LastBeat;
-unsigned int RateSpot = 0;
-float BPM; 
-unsigned int BPM_AVG; 
+static const int AVERAGE_COUNT = 4;
+int Heartbeat_Array[AVERAGE_COUNT];
+int FirstBeat = 0;
+unsigned long LastBeat = 0;
+int RateSpot = 0;
+float BPM = 0;
+unsigned int BPM_AVG = 0;
 
 
-
-uint HeartRate(){
+void HeartRate(){
     long IRValue = ParticleSensor.getIR();
 
     if(checkForBeat(IRValue) == true){
@@ -25,20 +25,18 @@ uint HeartRate(){
 
         if(BPM < 255 && BPM > 20){
             Heartbeat_Array[RateSpot++] = BPM;
-            RateSpot %= Average_Count;
+            RateSpot %= AVERAGE_COUNT;
 
 
             //taking the average 
             BPM_AVG = 0;
-            for(uint i = 0; i < Average_Count; i++){
+            for(unsigned int i = 0; i < AVERAGE_COUNT; i++){
                 BPM_AVG += Heartbeat_Array[i];
-            BPM_AVG /= Average_Count;
             }
+            BPM_AVG /= AVERAGE_COUNT;
         }
 
     }
-
-
     Serial.print("IR = ");
     Serial.print(IRValue);
 
@@ -47,5 +45,11 @@ uint HeartRate(){
 
     Serial.print(" , Average BPM = ");
     Serial.print(BPM_AVG);
+
+    if (IRValue < 50000){
+        Serial.print(" No finger?");
+    }
+
+    Serial.println();
 
 }

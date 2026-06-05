@@ -32,3 +32,4 @@ How does Heart Rate work?
     Then the blood is squeezed in the capliary tissues. The IR sensor can measure the volume of blood moving throught the 
     capliary tissues. using this we can determine heart beat. 
     This is called "Photoplethysmogram"
+    
