@@ -16,6 +16,8 @@ unsigned int BPM_AVG = 0;
 void HeartRate(){
     long IRValue = ParticleSensor.getIR();
 
+
+
     if(checkForBeat(IRValue) == true){
 
         // heart beat detected 
@@ -46,8 +48,19 @@ void HeartRate(){
     Serial.print(" , Average BPM = ");
     Serial.print(BPM_AVG);
 
-    if (IRValue < 50000){
-        Serial.print(" No finger?");
+    // Reset the IR values if no finger is detected 
+    if(IRValue < 20000){
+        BPM = 0;
+        BPM_AVG = 0;
+        RateSpot = 0;
+
+        //clear the array; 
+
+        for(uint i = 0; i < AVERAGE_COUNT; i++){
+            Heartbeat_Array[i] = 0;
+        }
+
+        Serial.print("\nNo finger detected\n");
     }
 
     Serial.println();

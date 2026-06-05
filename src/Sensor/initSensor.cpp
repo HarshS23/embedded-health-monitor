@@ -4,8 +4,9 @@
 extern MAX30105 ParticleSensor;
 
 void StartSensor(){
-
+    delay(1000);           
     Serial.begin(115200); // this is baud rate or comunication speed 
+    while(!Serial);        
     Serial.println("\n INITLIZING  MAX30105 SENSOR \n");
     Wire.begin(42,41);
     // This just checks if the sensor is found or not 
