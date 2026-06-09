@@ -61,6 +61,10 @@ void RunSp02(){
         ParticleSensor.nextSample();
 
 
+        Serial.print(F("RED = "));
+        Serial.print(Redbuffer[i], DEC);
+        Serial.print(F("IR = "));
+        Serial.print(irbuffer[i], DEC);
 
 
     }
