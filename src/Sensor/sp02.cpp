@@ -66,7 +66,55 @@ void RunSp02(){
         Serial.print(F("IR = "));
         Serial.print(irbuffer[i], DEC);
 
+    
+    }
+
+
+    // calculate heart rate and Sp02
+    maxim_heart_rate_and_oxygen_saturation(irbuffer, BufferLength, Redbuffer, &Sp02, &ValidSp02, &HeartRate, &ValidHeartRate);
+
+    while(1){
+        // dumping the first 25 sets of samples in the memory and shift the last 75 sets of samples to the top
+        for(byte i = 25; i < 100; i++){
+            Redbuffer[i - 25] = Redbuffer[i];
+            irbuffer[i - 25] = irbuffer[i];
+        }
+
+        // take 25 sets of samples before calculating the heart rate
+        for(byte i = 75; i < 100; i++){
+            while(ParticleSensor.available() == false){
+                ParticleSensor.check();
+            }
+
+            digitalWrite(ReadLED, !digitalRead(ReadLED)); // make led blick for every time data is read
+
+            Redbuffer[i] = ParticleSensor.getRed();
+            irbuffer[i] = ParticleSensor.getIR();
+            ParticleSensor.nextSample();
+
+
+            Serial.print(F("red="));
+            Serial.print(Redbuffer[i], DEC);
+            Serial.print(F(", ir="));
+            Serial.print(irbuffer[i], DEC);
+
+            Serial.print(F(", HR="));
+            Serial.print(HeartRate, DEC);
+
+            Serial.print(F(", HRvalid="));
+            Serial.print(ValidHeartRate, DEC);
+
+            Serial.print(F(", SPO2="));
+            Serial.print(Sp02, DEC);
+
+            Serial.print(F(", SPO2Valid="));
+            Serial.println(ValidSp02, DEC);
+
+        }
+
+
 
     }
+    maxim_heart_rate_and_oxygen_saturation(irbuffer, BufferLength, Redbuffer, &Sp02, &ValidSp02, &HeartRate, &ValidHeartRate);
 }
 
