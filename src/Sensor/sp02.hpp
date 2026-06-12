@@ -6,6 +6,10 @@
 #include "MAX30105.h"
 #include "spo2_algorithm.h"
 
+void Sp02_Setup();
+void RunSp02();
+
+
 
 
 #endif
